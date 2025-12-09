@@ -1,0 +1,39 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(client, "Клиент")
+System_Boundary(bank, "Банк") {
+    Person(managerBO, "Менеджер бэк-офиса")
+    Person(managerCO, "Менеджер колл-центра")
+    
+    System(cite, "Сайт")
+    System(mobile, "Интернет банк")
+    System(abs, "Автоматизированная банковская система")
+
+    Rel(client, cite, "Подача заявки на депозит")
+    Rel(cite, abs, "")
+    Rel(managerCO, abs, "Обработка заявки")
+    Rel(managerCO, client, "Предложение особых условий")
+    
+
+    Rel(client, mobile, "Подача заявки на депозит")
+    Rel(mobile, abs, "")
+    Rel(managerBO, abs, "Рассмотрение заявки")
+}
+
+System_Boundary(callCenter, "Сторонний кол-центр") {
+    Person(managerCO2, "Менеджер колл-центра")
+
+    System(callCenterSystem, "Кол-центр")
+    Rel(callCenterSystem, abs, "")
+    Rel(managerCO2, callCenterSystem, "Обработка заявки")
+    Rel(managerCO2, client, "Предложение особых условий")
+}
+
+System_Ext(sms, "СМС шлюз")
+Rel(abs, sms, "Приглашение клиента в банк")
+Rel(sms, client, "Уведомление")
+
+Rel(abs, sms, "Подтверждение об открытие депозита")
+
+@enduml
