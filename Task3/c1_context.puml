@@ -7,26 +7,28 @@ System_Boundary(bank, "Банк") {
     Person(managerCO, "Менеджер колл-центра")
     
     System(cite, "Сайт")
-    System(mobile, "Интернет банк")
+    System(internet_bank, "Интернет банк")
     System(abs, "Автоматизированная банковская система")
+    System(callCenterSystem, "Кол-центр")
 
     Rel(client, cite, "Подача заявки на депозит")
     Rel(cite, abs, "")
     Rel(managerCO, abs, "Обработка заявки")
-    Rel(managerCO, client, "Предложение особых условий")
+    Rel(managerCO, callCenterSystem, "Предложение особых условий")
+    Rel(callCenterSystem, client, "Звонок")
     
 
-    Rel(client, mobile, "Подача заявки на депозит")
-    Rel(mobile, abs, "")
+    Rel(client, internet_bank, "Подача заявки на депозит")
+    Rel(internet_bank, abs, "")
     Rel(managerBO, abs, "Рассмотрение заявки")
 }
 
 System_Boundary(callCenter, "Сторонний кол-центр") {
     Person(managerCO2, "Менеджер колл-центра")
 
-    System(callCenterSystem, "Кол-центр")
-    Rel(callCenterSystem, abs, "")
-    Rel(managerCO2, callCenterSystem, "Обработка заявки")
+    System_Ext(callCenterSystemExt, "Кол-центр")
+    Rel(callCenterSystemExt, abs, "")
+    Rel(managerCO2, callCenterSystemExt, "Обработка заявки")
     Rel(managerCO2, client, "Предложение особых условий")
 }
 

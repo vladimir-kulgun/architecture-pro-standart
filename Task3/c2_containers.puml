@@ -1,0 +1,58 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "Клиент")
+
+System_Ext(creditHistory, "Бюро кредитных историй")
+
+System_Boundary(bank, "") {
+    Person(managerBO, "Менеджер бэк офиса")
+
+    System_Boundary(internet_bank, "Интерент банк") {
+        Container(webApp, "Вэб-приложение", "ASP.NET")
+        ContainerDb(db, "База данных", "MS SQL", "")
+
+        Rel(webApp, db, "")
+    }
+
+    System_Boundary(abs, "Автоматизированная банковская система") {
+        Container(desktop, "Десктоп приложение", "Delphi", "Пользовательский интерфейс")
+        ContainerDb(database, "База данных", "Oracle", "Бизнес логика")
+        
+        Rel(desktop, database, "")
+    }
+
+    Rel(managerBO, desktop, "")
+    Rel(webApp, database, "")
+
+    System_Boundary(mvp, "MVP") {
+        Container(api, "Api GateWay")
+        Container(adapter, "Adapter", "")
+        
+        Rel(adapter, database, "")
+        Rel(webApp, api, "")
+
+        System_Boundary(deposit, "Депозиты") {
+            Container(depositService, "Сервис")
+            Container(depositWorker, "Фоновый процесс")
+            ContainerQueue(depositeQue, "Очередь")
+
+            Rel(api, depositService, "")
+            Rel(depositService, depositeQue, "")
+            Rel(depositWorker, depositeQue, "")
+            Rel(depositWorker, adapter, "")
+        }
+
+        System_Boundary(recomedations, "Персольные предложения") {
+            Container(recomedationsService, "Сервис")
+
+            Rel(api, recomedationsService, "")
+            Rel(recomedationsService, adapter, "")
+        }
+    }
+}
+
+
+Rel(client, webApp, "")
+Rel(recomedationsService, creditHistory, "")
+@enduml
