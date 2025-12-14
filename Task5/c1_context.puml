@@ -1,0 +1,56 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(client, "Клиент")
+
+AddRelTag("credit", $textColor="Green", $lineColor="Green")
+AddRelTag("credit-personal", $textColor="LightGreen", $lineColor="LightGreen")
+
+System_Ext(telecom, "Телеком оператор")
+System_Ext(history, "Бюро кредитных историй")
+
+System_Boundary(bank, "Банк") {
+    Person(managerLoan, "Менеджер по кредитам")
+
+    System(internet_bank, "Интернет банк")
+
+    System(abs, "Автоматизированная банковская система")
+    Rel(internet_bank, abs, "")
+
+    System(web, "Сайт")
+
+    System(mvp, "MVP")
+    
+    System(sms, "Смс-шлюз")
+    Rel(sms, telecom, "Оповещение")
+    Rel(telecom, client, "Оповещение")
+
+    System(loan, "Кредитный конвейер")
+
+    System(score, "Кредитный скоринг")
+    Rel(score, history, "")
+    Rel(abs, score, "данные", "раз в сутки")
+    Rel_Left(loan, score, "данные", "раз в сутки")
+
+    Rel_Up(loan, mvp, "Полная информация о кредитах")
+    Rel_Up(mvp, web, "Полная информация о кредитах")
+
+    Rel_Up(score, mvp, "Скоринг")
+    ' applying for credit
+    Rel_Up(web, client, "Список кредитов с актуальными ставками", "", $tags="credit")
+    Rel_Down(client, web, "Заявка на кредит", "форма: ФИО, телефон, паспорт", $tags="credit")
+    Rel_Down(web, mvp, "Заявка на кредит", "форма: ФИО, телефон, паспорт", $tags="credit")
+    Rel_Down(mvp, history, "")
+    Rel_Up(mvp, web, "Решение о выдаче", "", $tags="credit")
+    Rel_Down(mvp, sms, "Статус заявки")
+    Rel_Down(client, managerLoan, "Новая заявка")
+    Rel_Down(managerLoan, abs, "Работа с заявкой")
+    
+    ' applying for personal credit
+    Rel_Up(internet_bank, client, "Персонализированные ставки по кредиту", "", $tags="credit-person" )
+    Rel_Down(client, internet_bank, "Заявка на кредит", "номер счета", $tags="credit-person")
+    Rel_Down(internet_bank, mvp, "Заявка на кредит", "", $tags="credit-person")
+    Rel_Down(client, managerLoan, "Cуществующая заявка")
+}
+
+@enduml
