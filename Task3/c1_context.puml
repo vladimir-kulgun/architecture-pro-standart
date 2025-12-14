@@ -2,40 +2,67 @@
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
 
 Person(client, "Клиент")
+
+AddRelTag("deposit-iBank", $textColor="Green", $lineColor="Green")
+AddRelTag("deposit-web", $textColor="LightGreen", $lineColor="LightGreen")
+
+System_Boundary(_, "Партнерский кол-центр") {
+    System_Ext(callCenterExt, "Кол-центр")
+    Person_Ext(managerCOExt, "Менеджер кол-центра")    
+
+    Rel(callCenterExt, managerCOExt, "")
+}
+
+System_Ext(telecom, "Телеком оператор")
+System_Ext(history, "Бюро кредитных историй")
+
 System_Boundary(bank, "Банк") {
-    Person(managerBO, "Менеджер бэк-офиса")
-    Person(managerCO, "Менеджер колл-центра")
-    
-    System(cite, "Сайт")
+    Person(managerDeposit, "Менеджер по депозитам")
+    Person(managerCO, "Менеджер кол-центра")
+
     System(internet_bank, "Интернет банк")
+
     System(abs, "Автоматизированная банковская система")
-    System(callCenterSystem, "Кол-центр")
-
-    Rel(client, cite, "Подача заявки на депозит")
-    Rel(cite, abs, "")
-    Rel(managerCO, abs, "Обработка заявки")
-    Rel(managerCO, callCenterSystem, "Предложение особых условий")
-    Rel(callCenterSystem, client, "Звонок")
-    
-
-    Rel(client, internet_bank, "Подача заявки на депозит")
     Rel(internet_bank, abs, "")
-    Rel(managerBO, abs, "Рассмотрение заявки")
+
+    System(callCenter, "Кол-центр")
+    Rel_Down(managerCO, callCenter, "")
+
+    System(web, "Сайт")
+
+    System(mvp, "MVP")
+    
+    System(sms, "Смс-шлюз")
+    Rel(abs, sms, "Оповещение об одобрение") 
+    Rel(sms, telecom, "Оповещение")
+    Rel(telecom, client, "Оповещение")
+
+    System(loan, "Кредитный конвейер")
+
+    System(score, "Кредитный скоринг")
+    Rel(score, history, "")
+    Rel(abs, score, "данные", "раз в сутки")
+    Rel_Left(loan, score, "данные", "раз в сутки")
+
+    ' opening deposit via web
+    Rel_Up(web, client, "Список депозитов с актуальными ставками", "", $tags="deposit-web")
+    Rel_Down(client, web, "Заявка на депозит", "форма: ФИО + телефон", $tags="deposit-web")
+    Rel_Up(mvp, web, "Список депозитов с актуальными ставками", "", $tags="deposit-web")
+    Rel_Down(web, mvp, "Заявка на депозит", "форма: ФИО + телефон", $tags="deposit-web")
+    Rel_Down(mvp, callCenter, "Заявка на депозит", "", $tags="deposit-web")
+    Rel_Down(mvp, callCenterExt, "Заявка на депозит", "", $tags="deposit-web")
+    Rel_Up(managerCOExt, client, "Особые условия по депозиту", "", $tags="deposit-web")
+    Rel_Up(managerCO, client, "Особые условия по депозиту", "", $tags="deposit-web")
+    Rel_Down(client, managerDeposit, "Открытие депозита", "Идентификация нового клиента", $tags="deposit-web")
+
+    ' opening deposit via internet bank
+    Rel_Up(internet_bank, client, "Персональные предложение по депозиту", "", $tags="deposit-iBank")
+    Rel_Up(mvp, internet_bank, "Персональные предложение по депозиту", "", $tags="deposit-iBank")
+    Rel_Down(client, internet_bank, "Заявка на депозит", "№счета + сумма", $tags="deposit-iBank")
+    Rel_Down(internet_bank, mvp, "Заявка на депозит", "№счета + сумма", $tags="deposit-iBank")
+    Rel_Down(mvp, sms, "Подтверждение заявки", "", $tags="deposit-iBank")
+    Rel_Down(internet_bank, abs, "Заявка на депозит", "№счета + сумма", $tags="deposit-iBank")
+    Rel(managerDeposit, abs, "Обработка заявки клиента", "", $tags="deposit-iBank")
 }
-
-System_Boundary(callCenter, "Сторонний кол-центр") {
-    Person(managerCO2, "Менеджер колл-центра")
-
-    System_Ext(callCenterSystemExt, "Кол-центр")
-    Rel(callCenterSystemExt, abs, "")
-    Rel(managerCO2, callCenterSystemExt, "Обработка заявки")
-    Rel(managerCO2, client, "Предложение особых условий")
-}
-
-System_Ext(sms, "СМС шлюз")
-Rel(abs, sms, "Приглашение клиента в банк")
-Rel(sms, client, "Уведомление")
-
-Rel(abs, sms, "Подтверждение об открытие депозита")
 
 @enduml
