@@ -1,0 +1,115 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "Клиент")
+
+AddRelTag("deposit", $textColor="Green", $lineColor="Green")
+AddRelTag("deposit-call", $textColor="LightGreen", $lineColor="LightGreen")
+
+AddRelTag("credit", $textColor="Pink", $lineColor="Pink")
+
+System_Boundary(_, "Партнерский кол-центр") {
+    System_Ext(callCenterExt, "Кол-центр")
+    Person_Ext(managerCOExt, "Менеджер кол-центра")    
+
+    Rel(callCenterExt, managerCOExt, "Звонок")
+}
+Rel_Down(client, callCenterExt  , "Звонок")
+
+System_Ext(telecom, "Телеком оператор")
+System_Ext(history, "Бюро кредитных историй")
+
+System_Boundary(bank, "Банк") {
+    Person(managerFO, "Менеджер фронт-офиса")
+    Person(managerLoan, "Менеджер по кредитам")
+    Person(managerDeposit, "Менеджер по депозитам")
+    Person(managerCO, "Менеджер кол-центра")
+    
+    System_Boundary(internet_bank, "Интернет банк") {
+        Container(internet_bank_monolith, "Монолит", "ASP.NET MVC 4.5")
+        ContainerDb(internet_bank_db, "Хранилище", "MS SQL")
+
+        Rel(internet_bank_monolith, internet_bank_db, "")
+    }
+    Rel(client, internet_bank_monolith, "Проведение платежей")
+    Rel(client, internet_bank_monolith, "Открытие счета")
+
+    System_Boundary(abs, "Автоматизированная банковская система") {
+        Container(abs_desktop, "Клиент", "Delphi")
+        ContainerDb(abs_db, "Бизнес логика", "Oracle")
+
+        Rel(abs_desktop, abs_db, "")
+    }
+    Rel(internet_bank, abs, "")
+    Rel(managerDeposit, abs, "Персональная ставка для клиента")
+
+    System_Boundary(callCenter, "Кол-центр"){
+        Container(callCenterFE, "Клиент", "React.js")
+        Container(callCenterBE, "Бэкенд", "Java Spring Boot")
+        ContainerDb(callCenterDB, "Хранилище", "PostreSQL")
+
+        Rel(callCenterFE, callCenterBE, "")
+        Rel(callCenterBE, callCenterDB, "")
+    }
+    
+    System_Boundary(web, "Сайт") {
+        Container(webClient, "Клиент", "PHP & React.js")
+    }
+    Rel_Up(webClient, client, "Маркетинговая информация")
+    
+    System(sms, "Смс-шлюз")
+    Rel(abs, sms, "Оповещение об одобрение") 
+    Rel(sms, telecom, "Оповещение")
+    Rel(telecom, client, "Оповещение")
+
+    System_Boundary(loan, "Кредитный конвейер") {
+        Container(loanBPM, "Бизнес процессы", "Camunda (Java)")
+        ContainerDb(loanDb, "Хранилище", "Oracle")
+
+        Rel(loanBPM, loanDb, "")
+    }
+    
+    System_Boundary(score, "Кредитный скоринг") {
+        Container(scoreApi, "REST API", "Flask")
+        Container(scoreML, "Машинное обучение", "Python")
+        ContainerDb(scoreDb, "Хранилище", "PostreSQL")
+
+        Rel(scoreApi, scoreML, "")
+        Rel(scoreML, scoreDb, "")
+        Rel(scoreML, history, "")
+        Rel(scoreML, abs_db, "")
+    }
+    Rel(score, history, "")
+    Rel(abs, score, "данные", "раз в сутки")
+    Rel_Left(loan, score, "данные", "раз в сутки")
+
+    System(rates, "Банковская ставка по депозитам/кредитам", "Excel")
+    Rel_Down(managerLoan, rates, "Расчет ставки")
+
+    ' opening deposit in bank
+    Rel_Down(client, managerFO, "Заявка на депозит", "", $tags="deposit")
+    Rel_Down(managerFO, managerDeposit, "Заявка на депозит", "email", $tags="deposit")
+    Rel_Right(managerDeposit, managerLoan, "", "email", $tags="deposit")
+    Rel(managerLoan, abs, "Анализ кредитного риска клиента", "", $tags="deposit")
+    Rel_Left(managerLoan, managerDeposit, "Кредитный риск клиента", "email", $tags="deposit")
+    Rel_Down(managerDeposit, rates, "Кредитный риск клиента", $tags="deposit")
+    Rel_Up(rates, managerDeposit, "Персональная ставка для клиента", $tags="deposit")
+    Rel_Up(managerDeposit, managerFO, "Персональная ставка для клиента", "email", $tags="deposit")
+    Rel_Up(managerFO, client, "Персональная ставка для клиента", "", $tags="deposit")
+
+    ' opening deposit via call
+    Rel_Down(client, managerCO, "Заявка на депозит", "", $tags="deposit-call")
+    Rel_Down(managerCO, callCenter, "Заявка на депозит", "", $tags="deposit-call")
+    Rel(callCenter, abs, "Заявка на депозит", "", $tags="deposit-call")
+    Rel_Up(abs, managerDeposit, "обработка заявок", "", $tags="deposit-call")
+
+    ' applying for credit in bank
+    Rel_Down(client, managerFO, "Заявка на кредит", "", $tags="credit")
+    Rel(managerFO, abs, "Заявка на кредит", "", $tags="credit")
+    Rel_Down(abs, loan, "Заявки на кредит", "раз в сутки", $tags="credit")
+    Rel_Up(loan, abs, "Одобренные заявки на кредит", "раз в сутки", $tags="credit")
+    Rel(managerLoan, loan, "Обработка заявки", $tags="credit")
+    Rel_Up(score, managerLoan, "Данные для принятия решения", "", $tags="credit")
+}
+
+@enduml

@@ -1,0 +1,33 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(client, "Клиент")
+
+System_Boundary(bank, "Банк") {
+    Person(managerBO, "Менеджер бэк-офиса")
+    Person(managerCO, "Менеджер колл-центра")
+    
+    System(abs, "Автоматизированная банковская система")
+    System(callCenter, "Кол-центр")
+    System(mvp, "MVP")
+
+    Rel(managerCO, callCenter, "")
+    Rel(callCenter, mvp, "")
+
+    Rel(managerBO, mvp, "актуальные ставки")
+    Rel(mvp, abs, "")
+}
+
+System_Boundary(_, "Партнерский кол-центр") {
+    Person_Ext(managerCOExt, "Менеджер колл-центра")
+
+    System_Ext(callCenterExt, "Кол-центр")
+
+    Rel(managerCOExt, callCenterExt, "")
+}
+
+Rel(client, managerCO, "Консультация по ставкам")
+Rel(client, managerCOExt, "Консультация по ставкам")
+Rel(mvp, callCenterExt, "")
+
+@enduml

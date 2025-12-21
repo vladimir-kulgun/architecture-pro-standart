@@ -1,0 +1,63 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "Клиент")
+
+System_Boundary(bank, "Банк") {
+    Person(managerBO, "Менеджер бэк офиса")
+    Person(managerCO, "Менеджер кол-центра")
+
+    System_Boundary(abs, "Автоматизированная банковская система") {
+        Container(desktop, "Десктоп приложение", "Delphi", "Пользовательский интерфейс")
+        ContainerDb(database, "База данных", "Oracle", "Бизнес логика")
+        
+        Rel(desktop, database, "")
+    }
+
+    System_Boundary(callCenter, "Кол-центр") {
+        Container(callCenterFE, "Клиент", "React.js")
+        Container(callCenterBE, "Бизнес логика", "Java Spring Boot")
+        ContainerDb(callCenterDB, "Хранилище", "PostqreSQL")
+
+        Rel(callCenterFE, callCenterBE, "")
+        Rel(callCenterBE, callCenterDB, "")
+    }
+    Rel(managerCO, callCenterFE, "")
+
+    System_Boundary(mvp, "MVP") {
+        Container(backOfficeClient, "Backoffice Client")
+        Container(api, "Api GateWay")
+        Container(adapter, "Adapter", "")
+        
+        Rel(adapter, database, "")
+        Rel(backOfficeClient, api, "")
+
+        System_Boundary(rates, "Ставки") {
+            Container(ratesService, "Сервис")
+            Container(ratesWorker, "Фоновый процесс")
+            ContainerDb(ratesDB, "Хранилище")
+
+            Rel(api, ratesService, "")
+            Rel(ratesService, ratesDB, "")
+            Rel(ratesWorker, ratesDB, "")
+            Rel(ratesService, adapter, "")
+        }        
+    }
+    Rel(managerBO, backOfficeClient, "")   
+    Rel(callCenterBE, api, "")
+}
+
+
+System_Boundary(_, "Партнерский кол-центр") {
+    Person_Ext(managerCOExt, "Менеджер колл-центра")
+
+    System_Ext(callCenterExt, "Кол-центр")
+
+    Rel(managerCOExt, callCenterExt, "")
+}
+
+Rel(client, managerCO, "Консультация по ставкам")
+Rel(client, managerCOExt, "Консультация по ставкам")
+Rel(ratesWorker, callCenterExt, "SFTP")
+
+@enduml

@@ -1,0 +1,108 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "Клиент")
+
+AddRelTag("credit", $textColor="Green", $lineColor="Green")
+AddRelTag("credit-personal", $textColor="LightGreen", $lineColor="LightGreen")
+
+System_Ext(telecom, "Телеком оператор")
+System_Ext(history, "Бюро кредитных историй")
+
+System_Boundary(bank, "Банк") {
+    Person(managerLoan, "Менеджер по кредитам")
+
+    System_Boundary(internet_bank, "Интернет банк") {
+        Container(internet_bank_monolith, "Монолит", "ASP.NET MVC 4.5")
+        ContainerDb(internet_bank_db, "Хранилище", "MS SQL")
+
+        Rel(internet_bank_monolith, internet_bank_db, "")
+    }
+
+    System_Boundary(abs, "Автоматизированная банковская система") {
+        Container(abs_desktop, "Клиент", "Delphi")
+        ContainerDb(abs_db, "Бизнес логика", "Oracle")
+
+        Rel(abs_desktop, abs_db, "")
+    }
+    Rel(internet_bank, abs, "")
+
+    System_Boundary(web, "Сайт") {
+        Container(webClient, "Клиент", "PHP & React.js")
+    }
+
+    System_Boundary(mvp, "MVP") {
+        Container(api, "Api GateWay")
+        Container(adapter, "Adapter", "")
+        Rel(adapter, abs_db, "")
+
+        System_Boundary(credit, "Заявки на кредиты") {
+            Container(creditService, "Сервис")
+            Container(creditWorker, "Фоновый процесс")
+            ContainerQueue(crediteQue, "Очередь")
+
+            Rel(api, creditService, "")
+            Rel(creditService, crediteQue, "")
+            Rel(creditWorker, crediteQue, "")
+            Rel(creditWorker, adapter, "")
+        }
+
+        System_Boundary(creditPersonal, "Персональные предложения по кредиту") {
+            Container(creditPersonalService, "Сервис")
+            Container(creditPersonalWorker, "Фоновый процесс")
+            ContainerDb(creditPersonalDb, "Хранилище")
+
+            Rel(api, creditPersonalService, "")
+            Rel(creditPersonalService, creditPersonalDb, "")
+            Rel(creditPersonalWorker, creditPersonalDb, "")
+            Rel(creditPersonalWorker, score, "")
+        }
+    }
+    
+    System(sms, "Смс-шлюз")
+    Rel(sms, telecom, "Оповещение")
+    Rel(telecom, client, "Оповещение")
+
+    System_Boundary(loan, "Кредитный конвейер") {
+        Container(loanBPM, "Бизнес процессы", "Camunda (Java)")
+        ContainerDb(loanDb, "Хранилище", "Oracle")
+
+        Rel(loanBPM, loanDb, "")
+    }
+
+    System_Boundary(score, "Кредитный скоринг") {
+        Container(scoreApi, "REST API", "Flask")
+        Container(scoreML, "Машинное обучение", "Python")
+        ContainerDb(scoreDb, "Хранилище", "PostreSQL")
+
+        Rel(scoreApi, scoreML, "")
+        Rel(scoreML, scoreDb, "")
+        Rel(scoreML, history, "")
+        Rel(scoreML, abs_db, "")
+    }
+    Rel(score, history, "")
+    Rel(abs, score, "данные", "раз в сутки")
+    Rel_Left(loan, score, "данные", "раз в сутки")
+
+    Rel_Up(loan, mvp, "Полная информация о кредитах")
+    Rel_Up(mvp, web, "Полная информация о кредитах")
+
+    Rel_Up(score, mvp, "Скоринг")
+    ' applying for credit
+    Rel_Up(web, client, "Список кредитов с актуальными ставками", "", $tags="credit")
+    Rel_Down(client, web, "Заявка на кредит", "форма: ФИО, телефон, паспорт", $tags="credit")
+    Rel_Down(web, mvp, "Заявка на кредит", "форма: ФИО, телефон, паспорт", $tags="credit")
+    Rel_Down(mvp, history, "")
+    Rel_Up(mvp, web, "Решение о выдаче", "", $tags="credit")
+    Rel_Down(mvp, sms, "Статус заявки")
+    Rel_Down(client, managerLoan, "Новая заявка")
+    Rel_Down(managerLoan, abs, "Работа с заявкой")
+    
+    ' applying for personal credit
+    Rel_Up(internet_bank, client, "Персонализированные ставки по кредиту", "", $tags="credit-person" )
+    Rel_Down(client, internet_bank, "Заявка на кредит", "номер счета", $tags="credit-person")
+    Rel_Down(internet_bank, mvp, "Заявка на кредит", "", $tags="credit-person")
+    Rel_Down(client, managerLoan, "Cуществующая заявка")
+}
+
+@enduml
